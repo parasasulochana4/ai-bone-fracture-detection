@@ -49,8 +49,7 @@ export const analyzeXray = createServerFn({ method: "POST" })
     return { image: data.image };
   })
   .handler(async ({ data }): Promise<FractureAnalysis> => {
-    const request = getRequest();
-    const { provider } = createLovableProvider(request);
+    const { provider } = createLovableProvider();
     const mediaType = data.image.slice(5, data.image.indexOf(";")) || "image/jpeg";
     const messages: ModelMessage[] = [
       {
@@ -67,7 +66,6 @@ export const analyzeXray = createServerFn({ method: "POST" })
       messages,
       output: Output.object({ schema: analysisSchema }),
       providerOptions: RESPONSES_PROVIDER_OPTIONS,
-      abortSignal: request.signal,
     });
     const analysis = await result.output;
     if (!analysis) throw new Error("The AI could not analyze this image. Try a clearer X-ray.");
