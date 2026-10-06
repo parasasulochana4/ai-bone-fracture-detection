@@ -48,7 +48,8 @@ export const analyzeXray = createServerFn({ method: "POST" })
     }
     return { image: data.image };
   })
-  .handler(async ({ data, request }): Promise<FractureAnalysis> => {
+  .handler(async ({ data }): Promise<FractureAnalysis> => {
+    const request = getRequest();
     const { provider } = createLovableProvider(request);
     const mediaType = data.image.slice(5, data.image.indexOf(";")) || "image/jpeg";
     const messages: ModelMessage[] = [
