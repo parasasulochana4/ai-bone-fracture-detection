@@ -97,7 +97,7 @@ export function DoctorChat({ analysis }: { analysis: FractureAnalysis }) {
                     : "border border-border bg-card text-card-foreground"
                 }`}
               >
-                {text}
+                {renderMarkdown(text)}
               </div>
             </div>
           );
