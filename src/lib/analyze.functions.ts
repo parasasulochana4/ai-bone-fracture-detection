@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, getRequest } from "@tanstack/react-start";
 import { streamText, Output, type ModelMessage } from "ai";
 import { z } from "zod";
 import { AI_MODEL, createLovableProvider, RESPONSES_PROVIDER_OPTIONS } from "./ai.server";

@@ -54,9 +54,11 @@ export function downloadReport(analysis: FractureAnalysis, imageDataUrl: string 
 
   const verdict = analysis.fractureDetected ? "FRACTURE DETECTED" : "NO FRACTURE DETECTED";
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(
-    ...(analysis.fractureDetected ? ([180, 30, 30] as const) : ([20, 130, 70] as const)),
-  );
+  if (analysis.fractureDetected) {
+    doc.setTextColor(180, 30, 30);
+  } else {
+    doc.setTextColor(20, 130, 70);
+  }
   doc.text(verdict, dx, y + 12);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);

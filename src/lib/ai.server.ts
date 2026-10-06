@@ -35,7 +35,6 @@ export function createLovableProvider(request: Request) {
     apiKey,
     headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
     fetch: runIdFetch.fetch,
-    structuredOutputs: true,
   });
   return { provider, runIdFetch };
 }
