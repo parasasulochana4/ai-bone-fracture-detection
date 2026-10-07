@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { streamText, Output, type ModelMessage } from "ai";
 import { z } from "zod";
-import { AI_MODEL, createLovableProvider, RESPONSES_PROVIDER_OPTIONS } from "./ai.server";
+import { AI_MODEL, createAiProvider, RESPONSES_PROVIDER_OPTIONS } from "./ai.server";
 
 const hotspotSchema = z.object({
   x: z.number().describe("horizontal center of the region, 0-1 relative to image width"),
@@ -49,7 +49,7 @@ export const analyzeXray = createServerFn({ method: "POST" })
     return { image: data.image };
   })
   .handler(async ({ data }): Promise<FractureAnalysis> => {
-    const { provider } = createLovableProvider();
+    const { provider } = createAiProvider();
     const mediaType = data.image.slice(5, data.image.indexOf(";")) || "image/jpeg";
     const messages: ModelMessage[] = [
       {
