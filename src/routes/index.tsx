@@ -11,6 +11,7 @@ import {
   MessageSquareText,
   ScanLine,
   Stethoscope,
+  Trophy,
   Upload,
   X,
 } from "lucide-react";
@@ -43,6 +44,22 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
+
+interface ModelStat {
+  name: string;
+  accuracy: number; // 0-100
+  note: string;
+}
+
+// TODO: replace with the real accuracies from your training results.
+const MODELS: ModelStat[] = [
+  { name: "VGG16", accuracy: 89.2, note: "Deep CNN baseline" },
+  { name: "ResNet50", accuracy: 92.6, note: "Residual networks" },
+  { name: "InceptionV3", accuracy: 91.4, note: "Multi-scale features" },
+  { name: "DenseNet121", accuracy: 94.8, note: "Dense connections" },
+];
+
+const bestModel = MODELS.reduce((a, b) => (b.accuracy > a.accuracy ? b : a));
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -199,6 +216,57 @@ function Index() {
                   <p className="mt-1 text-sm text-muted-foreground">{f.text}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Models compared */}
+            <div className="mt-12 text-left">
+              <div className="mb-5 text-center">
+                <h3 className="text-xl font-bold tracking-tight text-foreground">
+                  Models compared
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Fracture-detection accuracy of each evaluated model — the best performer is
+                  highlighted.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {MODELS.map((m) => {
+                  const isBest = m.name === bestModel.name;
+                  return (
+                    <div
+                      key={m.name}
+                      className={`rounded-xl border p-5 ${
+                        isBest
+                          ? "border-primary/60 bg-primary/10"
+                          : "border-border bg-card/50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-foreground">{m.name}</p>
+                        {isBest && (
+                          <Badge className="gap-1 bg-primary text-primary-foreground hover:bg-primary">
+                            <Trophy className="h-3 w-3" />
+                            Best model
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{m.note}</p>
+                      <div className="mt-3 mb-1.5 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Accuracy</span>
+                        <span
+                          className={`font-bold ${isBest ? "text-primary" : "text-foreground"}`}
+                        >
+                          {m.accuracy.toFixed(1)}%
+                        </span>
+                      </div>
+                      <Progress value={m.accuracy} className="h-2" />
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-4 text-center text-xs text-muted-foreground">
+                This app currently runs the best-performing model for analysis.
+              </p>
             </div>
           </div>
         )}
