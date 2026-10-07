@@ -44,6 +44,22 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+interface ModelStat {
+  name: string;
+  accuracy: number; // 0-100
+  note: string;
+}
+
+// TODO: replace with the real accuracies from your training results.
+const MODELS: ModelStat[] = [
+  { name: "VGG16", accuracy: 89.2, note: "Deep CNN baseline" },
+  { name: "ResNet50", accuracy: 92.6, note: "Residual networks" },
+  { name: "InceptionV3", accuracy: 91.4, note: "Multi-scale features" },
+  { name: "DenseNet121", accuracy: 94.8, note: "Dense connections" },
+];
+
+const bestModel = MODELS.reduce((a, b) => (b.accuracy > a.accuracy ? b : a));
+
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
