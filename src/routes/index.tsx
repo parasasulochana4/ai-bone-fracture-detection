@@ -292,7 +292,7 @@ function Index() {
                     <span className="truncate">{fileName || "X-ray"}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {analysis && (
+                    {analysis?.fractureDetected && (
                       <Button
                         size="sm"
                         variant={showHeatmap ? "default" : "outline"}
@@ -317,7 +317,7 @@ function Index() {
                         alt="Uploaded X-ray"
                         className="max-h-[520px] w-auto rounded-lg"
                       />
-                      {analysis && (
+                      {analysis?.fractureDetected && (
                         <HeatmapOverlay hotspots={analysis.hotspots} visible={showHeatmap} />
                       )}
                     </div>
