@@ -26,7 +26,7 @@ export function getLovableAiGatewayRunId(request: Request) {
   return request.headers.get(LOVABLE_AIG_RUN_ID_HEADER)?.trim() || undefined;
 }
 
-export function createLovableProvider(request?: Request) {
+export function createAiProvider(request?: Request) {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured (missing LOVABLE_API_KEY)");
   const runIdFetch = createLovableAiGatewayRunIdFetch(request ? getLovableAiGatewayRunId(request) : undefined);

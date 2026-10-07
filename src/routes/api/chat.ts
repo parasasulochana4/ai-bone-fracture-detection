@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
-import { AI_MODEL, createLovableProvider, RESPONSES_PROVIDER_OPTIONS } from "@/lib/ai.server";
+import { AI_MODEL, createAiProvider, RESPONSES_PROVIDER_OPTIONS } from "@/lib/ai.server";
 
 const DOCTOR_PROMPT = `You are "FractureAI Doctor", an AI orthopedic consultation assistant inside a bone-fracture X-ray analysis app.
 You are chatting with a patient (or caregiver) after their X-ray was analyzed.
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/chat")({
         if (!Array.isArray(body.messages)) {
           return Response.json({ error: "messages are required" }, { status: 400 });
         }
-        const { provider } = createLovableProvider(request);
+        const { provider } = createAiProvider(request);
         const modelMessages = await convertToModelMessages(body.messages);
         const system = body.analysisContext
           ? `${DOCTOR_PROMPT}\n\n--- X-RAY ANALYSIS CONTEXT ---\n${body.analysisContext}\n--- END CONTEXT ---`
