@@ -4,7 +4,7 @@ const LOVABLE_AIG_RUN_ID_HEADER = "X-Lovable-AIG-Run-ID";
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
 export const AI_MODEL = "openai/gpt-6-astra";
 
-export function createLovableAiGatewayRunIdFetch(initialRunId?: string) {
+export function createRunIdFetch(initialRunId?: string) {
   let runId = initialRunId?.trim() || undefined;
   return {
     getRunId: () => runId,
@@ -22,14 +22,14 @@ export function createLovableAiGatewayRunIdFetch(initialRunId?: string) {
   };
 }
 
-export function getLovableAiGatewayRunId(request: Request) {
+export function getRunId(request: Request) {
   return request.headers.get(LOVABLE_AIG_RUN_ID_HEADER)?.trim() || undefined;
 }
 
 export function createAiProvider(request?: Request) {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured (missing LOVABLE_API_KEY)");
-  const runIdFetch = createLovableAiGatewayRunIdFetch(request ? getLovableAiGatewayRunId(request) : undefined);
+  const runIdFetch = createRunIdFetch(request ? getRunId(request) : undefined);
   const provider = createOpenAI({
     baseURL: GATEWAY_URL,
     apiKey,
