@@ -452,10 +452,6 @@ function Index() {
           </div>
         )}
 
-        <footer className="mt-12 border-t border-border/60 pt-6 pb-4 text-center text-xs text-muted-foreground">
-          FractureAI is an AI screening aid and does not replace professional medical advice,
-          diagnosis, or treatment.
-        </footer>
       </main>
     </div>
   );
