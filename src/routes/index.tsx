@@ -16,6 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { analyzeXray, type FractureAnalysis } from "@/lib/analyze.functions";
+import { predictFracture } from "@/lib/model";
+import modelMetrics from "@/lib/model-metrics.json";
 import { downloadReport } from "@/lib/report";
 import { HeatmapOverlay } from "@/components/HeatmapOverlay";
 import { DoctorChat } from "@/components/DoctorChat";
@@ -51,14 +53,8 @@ interface ModelStat {
   note: string;
 }
 
-// TODO: replace with the real accuracies from your training results.
-const MODELS: ModelStat[] = [
-  { name: "VGG16", accuracy: 89.2, note: "Deep CNN baseline" },
-  { name: "ResNet50", accuracy: 92.6, note: "Residual networks" },
-  { name: "InceptionV3", accuracy: 91.4, note: "Multi-scale features" },
-  { name: "DenseNet121", accuracy: 94.8, note: "Dense connections" },
-];
-
+// Measured on the held-out test split by ml/finetune.py — regenerate, never hand-edit.
+const MODELS: ModelStat[] = modelMetrics.models;
 const bestModel = MODELS.reduce((a, b) => (b.accuracy > a.accuracy ? b : a));
 
 function readAsDataUrl(file: File): Promise<string> {
@@ -97,7 +93,8 @@ function Index() {
       const dataUrl = await readAsDataUrl(file);
       setImage(dataUrl);
       setFileName(file.name);
-      const result = await analyzeXray({ data: { image: dataUrl } });
+      const prediction = await predictFracture(dataUrl);
+      const result = await analyzeXray({ data: { image: dataUrl, prediction } });
       if (!result.isXray) {
         setError("This doesn't look like a bone X-ray. Please upload a valid X-ray image.");
         setImage(null);
@@ -225,7 +222,7 @@ function Index() {
                   Models compared
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Fracture-detection accuracy of each evaluated model — the best performer is
+                  Measured fracture-detection accuracy of each trained model — the best performer is
                   highlighted.
                 </p>
               </div>
@@ -236,9 +233,7 @@ function Index() {
                     <div
                       key={m.name}
                       className={`rounded-xl border p-5 ${
-                        isBest
-                          ? "border-primary/60 bg-primary/10"
-                          : "border-border bg-card/50"
+                        isBest ? "border-primary/60 bg-primary/10" : "border-border bg-card/50"
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -265,7 +260,11 @@ function Index() {
                 })}
               </div>
               <p className="mt-4 text-center text-xs text-muted-foreground">
-                This app currently runs the best-performing model for analysis.
+                Accuracy on {modelMetrics.testSize.toLocaleString()} held-out test X-rays never seen
+                in training ({modelMetrics.dataset}). Best model: sensitivity{" "}
+                {modelMetrics.sensitivity.toFixed(1)}%, specificity{" "}
+                {modelMetrics.specificity.toFixed(1)}%. This app runs the best model in your
+                browser.
               </p>
             </div>
           </div>
@@ -383,10 +382,7 @@ function Index() {
                     </div>
                   )}
 
-                  <Button
-                    className="mt-6 gap-2"
-                    onClick={() => downloadReport(analysis, image)}
-                  >
+                  <Button className="mt-6 gap-2" onClick={() => downloadReport(analysis, image)}>
                     <Download className="h-4 w-4" />
                     Download PDF report
                   </Button>
@@ -451,7 +447,6 @@ function Index() {
             </div>
           </div>
         )}
-
       </main>
     </div>
   );

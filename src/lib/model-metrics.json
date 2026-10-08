@@ -1,0 +1,9 @@
+{
+  "dataset": "Bone Fracture Multi-Region X-ray, leak-free split",
+  "testSize": 1518,
+  "sensitivity": 86.6,
+  "specificity": 74.4,
+  "models": [
+    { "name": "DenseNet121 (fine-tuned)", "accuracy": 80.5, "note": "Last dense block fine-tuned" }
+  ]
+}

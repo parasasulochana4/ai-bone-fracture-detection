@@ -1,0 +1,9 @@
+torch
+torchvision
+datasets
+pillow
+scikit-learn
+scipy
+onnx
+onnxruntime
+imagehash
