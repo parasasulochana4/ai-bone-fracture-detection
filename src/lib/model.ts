@@ -18,17 +18,17 @@ const MEAN = [0.485, 0.456, 0.406];
 const STD = [0.229, 0.224, 0.225];
 export const DECISION_THRESHOLD = 0.5;
 
-type Ort = typeof import("onnxruntime-web");
+type Ort = typeof import("onnxruntime-web/wasm");
 let sessionPromise: Promise<{
   ort: Ort;
-  session: import("onnxruntime-web").InferenceSession;
+  session: import("onnxruntime-web/wasm").InferenceSession;
 }> | null = null;
 
 function getSession() {
   if (!sessionPromise) {
     sessionPromise = (async () => {
-      const ort = await import("onnxruntime-web");
-      ort.env.wasm.wasmPaths = "/ort/";
+      const ort = await import("onnxruntime-web/wasm");
+      ort.env.wasm.wasmPaths = { wasm: "/ort/ort-wasm-simd-threaded.wasm" };
       ort.env.wasm.numThreads = 1;
       const session = await ort.InferenceSession.create(MODEL_URL, {
         executionProviders: ["wasm"],
