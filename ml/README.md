@@ -34,10 +34,10 @@ Copy `fracture-densenet121.onnx` to `public/models/` and update
 
 ## Results (leak-free test split, 1,518 images)
 
-| Model | Test accuracy | Sensitivity | Specificity |
-|---|---|---|---|
-| DenseNet121 frozen + logistic regression | ~81% | – | – |
-| DenseNet121, denseblock4 fine-tuned (exported ONNX) | 82.8% | 86.2% | 79.4% |
-| **DenseNet121, denseblock3+4 fine-tuned (exported ONNX, used by the site)** | **88.7%** | **93.4%** | **84.0%** |
+| Model                                                                       | Test accuracy | Sensitivity | Specificity |
+| --------------------------------------------------------------------------- | ------------- | ----------- | ----------- |
+| DenseNet121 frozen + logistic regression                                    | ~81%          | –           | –           |
+| DenseNet121, denseblock4 fine-tuned (exported ONNX)                         | 82.8%         | 86.2%       | 79.4%       |
+| **DenseNet121, denseblock3+4 fine-tuned (exported ONNX, used by the site)** | **88.7%**     | **93.4%**   | **84.0%**   |
 
 For comparison, a random (leaky) split scores ~96%. That number is inflated by duplicate copies, so it isn't reported on the site.
