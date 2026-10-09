@@ -23,13 +23,15 @@ function buildContext(a: FractureAnalysis): string {
 /** Minimal markdown: **bold**, - bullets, line breaks. */
 function renderMarkdown(text: string) {
   return text.split("\n").map((line, i) => {
-    const parts = line.split(/(\*\*[^*]+\*\*)/g).map((seg, j) =>
-      seg.startsWith("**") && seg.endsWith("**") ? (
-        <strong key={j}>{seg.slice(2, -2)}</strong>
-      ) : (
-        <span key={j}>{seg}</span>
-      ),
-    );
+    const parts = line
+      .split(/(\*\*[^*]+\*\*)/g)
+      .map((seg, j) =>
+        seg.startsWith("**") && seg.endsWith("**") ? (
+          <strong key={j}>{seg.slice(2, -2)}</strong>
+        ) : (
+          <span key={j}>{seg}</span>
+        ),
+      );
     return (
       <span key={i}>
         {parts}

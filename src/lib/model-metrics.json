@@ -1,0 +1,13 @@
+{
+  "dataset": "Bone Fracture Multi-Region X-ray, leak-free split",
+  "testSize": 1518,
+  "sensitivity": 93.4,
+  "specificity": 84.0,
+  "models": [
+    {
+      "name": "DenseNet121 (fine-tuned)",
+      "accuracy": 88.7,
+      "note": "Dense blocks 3+4 fine-tuned; exported ONNX model measured end-to-end on held-out test images"
+    }
+  ]
+}

@@ -16,6 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { analyzeXray, type FractureAnalysis } from "@/lib/analyze.functions";
+import { predictFracture, type ModelPrediction } from "@/lib/model";
+import modelMetrics from "@/lib/model-metrics.json";
 import { downloadReport } from "@/lib/report";
 import { HeatmapOverlay } from "@/components/HeatmapOverlay";
 import { DoctorChat } from "@/components/DoctorChat";
@@ -51,15 +53,27 @@ interface ModelStat {
   note: string;
 }
 
-// TODO: replace with the real accuracies from your training results.
-const MODELS: ModelStat[] = [
-  { name: "VGG16", accuracy: 89.2, note: "Deep CNN baseline" },
-  { name: "ResNet50", accuracy: 92.6, note: "Residual networks" },
-  { name: "InceptionV3", accuracy: 91.4, note: "Multi-scale features" },
-  { name: "DenseNet121", accuracy: 94.8, note: "Dense connections" },
-];
-
+// Measured on the held-out test split by ml/finetune.py — regenerate, never hand-edit.
+const MODELS: ModelStat[] = modelMetrics.models;
 const bestModel = MODELS.reduce((a, b) => (b.accuracy > a.accuracy ? b : a));
+
+function modelOnlyAnalysis(prediction: ModelPrediction): FractureAnalysis {
+  return {
+    isXray: true,
+    boneRegion: "Region not assessed",
+    fractureType: "not assessed",
+    severity: "not assessed",
+    urgency: "not assessed",
+    summary: prediction.fractureDetected
+      ? "The DenseNet121 model flagged a likely fracture. Please have the X-ray reviewed by a doctor."
+      : "The DenseNet121 model did not find signs of a fracture.",
+    findings: [],
+    treatmentPlan: [],
+    fractureDetected: prediction.fractureDetected,
+    confidence: prediction.confidence,
+    hotspots: prediction.fractureDetected ? prediction.hotspots : [],
+  };
+}
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -76,6 +90,7 @@ function Index() {
   const [analysis, setAnalysis] = useState<FractureAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -91,13 +106,22 @@ function Index() {
       return;
     }
     setError(null);
+    setReportError(null);
     setAnalysis(null);
     setLoading(true);
     try {
       const dataUrl = await readAsDataUrl(file);
       setImage(dataUrl);
       setFileName(file.name);
-      const result = await analyzeXray({ data: { image: dataUrl } });
+      const prediction = await predictFracture(dataUrl);
+      let result: FractureAnalysis;
+      try {
+        result = await analyzeXray({ data: { image: dataUrl, prediction } });
+      } catch (e) {
+        const reason = e instanceof Error ? e.message : "AI report service unavailable";
+        setReportError(reason);
+        result = modelOnlyAnalysis(prediction);
+      }
       if (!result.isXray) {
         setError("This doesn't look like a bone X-ray. Please upload a valid X-ray image.");
         setImage(null);
@@ -116,6 +140,7 @@ function Index() {
     setImage(null);
     setAnalysis(null);
     setError(null);
+    setReportError(null);
     setFileName("");
   };
 
@@ -225,7 +250,7 @@ function Index() {
                   Models compared
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Fracture-detection accuracy of each evaluated model — the best performer is
+                  Measured fracture-detection accuracy of each trained model — the best performer is
                   highlighted.
                 </p>
               </div>
@@ -236,9 +261,7 @@ function Index() {
                     <div
                       key={m.name}
                       className={`rounded-xl border p-5 ${
-                        isBest
-                          ? "border-primary/60 bg-primary/10"
-                          : "border-border bg-card/50"
+                        isBest ? "border-primary/60 bg-primary/10" : "border-border bg-card/50"
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -265,7 +288,11 @@ function Index() {
                 })}
               </div>
               <p className="mt-4 text-center text-xs text-muted-foreground">
-                This app currently runs the best-performing model for analysis.
+                Accuracy on {modelMetrics.testSize.toLocaleString()} held-out test X-rays never seen
+                in training ({modelMetrics.dataset}). Best model: sensitivity{" "}
+                {modelMetrics.sensitivity.toFixed(1)}%, specificity{" "}
+                {modelMetrics.specificity.toFixed(1)}%. This app runs the best model in your
+                browser.
               </p>
             </div>
           </div>
@@ -375,6 +402,16 @@ function Index() {
                     {analysis.summary}
                   </p>
 
+                  {reportError && (
+                    <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-400">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>
+                        AI-written report unavailable ({reportError}). The verdict, confidence and
+                        heatmap above come from the on-device model and are unaffected.
+                      </span>
+                    </div>
+                  )}
+
                   {analysis.urgency === "urgent" && (
                     <div className="mt-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
                       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -383,10 +420,7 @@ function Index() {
                     </div>
                   )}
 
-                  <Button
-                    className="mt-6 gap-2"
-                    onClick={() => downloadReport(analysis, image)}
-                  >
+                  <Button className="mt-6 gap-2" onClick={() => downloadReport(analysis, image)}>
                     <Download className="h-4 w-4" />
                     Download PDF report
                   </Button>
@@ -398,37 +432,41 @@ function Index() {
             <div className="space-y-6 lg:col-span-2">
               {analysis && (
                 <>
-                  <div className="rounded-2xl border border-border bg-card p-6">
-                    <h3 className="flex items-center gap-2 font-semibold text-foreground">
-                      <Stethoscope className="h-4 w-4 text-primary" />
-                      Key findings
-                    </h3>
-                    <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                      {analysis.findings.map((f, i) => (
-                        <li key={i} className="flex gap-2">
-                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {analysis.findings.length > 0 && (
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <h3 className="flex items-center gap-2 font-semibold text-foreground">
+                        <Stethoscope className="h-4 w-4 text-primary" />
+                        Key findings
+                      </h3>
+                      <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                        {analysis.findings.map((f, i) => (
+                          <li key={i} className="flex gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                  <div className="rounded-2xl border border-border bg-card p-6">
-                    <h3 className="flex items-center gap-2 font-semibold text-foreground">
-                      <Activity className="h-4 w-4 text-primary" />
-                      Treatment plan
-                    </h3>
-                    <ol className="mt-3 space-y-2.5 text-sm text-muted-foreground">
-                      {analysis.treatmentPlan.map((t, i) => (
-                        <li key={i} className="flex gap-3">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
-                            {i + 1}
-                          </span>
-                          {t}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
+                  {analysis.treatmentPlan.length > 0 && (
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                      <h3 className="flex items-center gap-2 font-semibold text-foreground">
+                        <Activity className="h-4 w-4 text-primary" />
+                        Treatment plan
+                      </h3>
+                      <ol className="mt-3 space-y-2.5 text-sm text-muted-foreground">
+                        {analysis.treatmentPlan.map((t, i) => (
+                          <li key={i} className="flex gap-3">
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+                              {i + 1}
+                            </span>
+                            {t}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
 
                   <div className="flex h-[460px] flex-col overflow-hidden rounded-2xl border border-border bg-card">
                     <div className="border-b border-border px-4 py-3">
@@ -451,7 +489,6 @@ function Index() {
             </div>
           </div>
         )}
-
       </main>
     </div>
   );

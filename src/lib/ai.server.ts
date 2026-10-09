@@ -1,50 +1,8 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-const LOVABLE_AIG_RUN_ID_HEADER = "X-Lovable-AIG-Run-ID";
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
-export const AI_MODEL = "openai/gpt-6-astra";
-
-export function createRunIdFetch(initialRunId?: string) {
-  let runId = initialRunId?.trim() || undefined;
-  return {
-    getRunId: () => runId,
-    fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
-      const headers = new Headers(init?.headers);
-      if (runId && !headers.has(LOVABLE_AIG_RUN_ID_HEADER)) {
-        headers.set(LOVABLE_AIG_RUN_ID_HEADER, runId);
-      }
-      const response = await fetch(input, { ...init, headers });
-      if (!runId) {
-        runId = response.headers.get(LOVABLE_AIG_RUN_ID_HEADER)?.trim() || undefined;
-      }
-      return response;
-    },
-  };
+export function getAiModel() {
+  const apiKey = process.env["GEMINI_API_KEY"];
+  if (!apiKey) throw new Error("AI is not configured (missing GEMINI_API_KEY)");
+  const google = createGoogleGenerativeAI({ apiKey });
+  return google(process.env["GEMINI_MODEL"] || "gemini-flash-latest");
 }
-
-export function getRunId(request: Request) {
-  return request.headers.get(LOVABLE_AIG_RUN_ID_HEADER)?.trim() || undefined;
-}
-
-export function createAiProvider(request?: Request) {
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) throw new Error("AI is not configured (missing LOVABLE_API_KEY)");
-  const runIdFetch = createRunIdFetch(request ? getRunId(request) : undefined);
-  const provider = createOpenAI({
-    baseURL: GATEWAY_URL,
-    apiKey,
-    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-    fetch: runIdFetch.fetch,
-  });
-  return { provider, runIdFetch };
-}
-
-export const RESPONSES_PROVIDER_OPTIONS = {
-  openai: {
-    forceReasoning: true,
-    reasoningEffort: "medium",
-    reasoningSummary: "auto",
-    store: false,
-    include: ["reasoning.encrypted_content"],
-  },
-} as const;
