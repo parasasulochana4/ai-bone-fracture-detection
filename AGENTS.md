@@ -11,7 +11,7 @@
 
 # Architecture rules
 
-- AI calls go to Google Gemini (OpenAI-compatible endpoint, chat API) via `src/lib/ai.server.ts` using the `GEMINI_API_KEY` secret; never expose it client-side.
+- AI calls go through Lovable AI Gateway (`openai/gpt-6-astra`) via `src/lib/ai.server.ts`; never expose `LOVABLE_API_KEY` client-side.
 - X-ray analysis is a one-shot `createServerFn` in `src/lib/analyze.functions.ts` returning a structured zod object (fracture verdict, confidence, hotspots, treatment plan).
 - The "heatmap" is a client-side Grad-CAM-style overlay (`src/components/HeatmapOverlay.tsx`) drawn from AI-returned normalized hotspot coordinates — it is not true Grad-CAM from a trained model.
 - AI doctor chat streams through `src/routes/api/chat.ts` (AI SDK `useChat` + `DefaultChatTransport`); the analysis result is injected into the system prompt as context. No chat persistence.

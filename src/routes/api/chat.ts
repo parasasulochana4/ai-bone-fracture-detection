@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/chat")({
           ? `${DOCTOR_PROMPT}\n\n--- X-RAY ANALYSIS CONTEXT ---\n${body.analysisContext}\n--- END CONTEXT ---`
           : DOCTOR_PROMPT;
         const result = streamText({
-          model: provider.chat(AI_MODEL),
+          model: provider.responses(AI_MODEL),
           system,
           messages: modelMessages,
           providerOptions: RESPONSES_PROVIDER_OPTIONS,

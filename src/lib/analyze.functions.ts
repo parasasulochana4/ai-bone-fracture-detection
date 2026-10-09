@@ -61,7 +61,7 @@ export const analyzeXray = createServerFn({ method: "POST" })
       },
     ];
     const result = streamText({
-      model: provider.chat(AI_MODEL),
+      model: provider.responses(AI_MODEL),
       system: SYSTEM_PROMPT,
       messages,
       output: Output.object({ schema: analysisSchema }),
