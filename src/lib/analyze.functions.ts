@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { streamText, Output, type ModelMessage } from "ai";
 import { z } from "zod";
-import { AI_MODEL, createAiProvider, RESPONSES_PROVIDER_OPTIONS } from "./ai.server";
+import { AI_MODEL, createAiProvider } from "./ai.server";
 
 const hotspotSchema = z.object({
   x: z.number().describe("horizontal center of the region, 0-1 relative to image width"),
@@ -61,11 +61,12 @@ export const analyzeXray = createServerFn({ method: "POST" })
       },
     ];
     const result = streamText({
-      model: provider.responses(AI_MODEL),
+      // Gemini SDK bundles a newer provider version than ai@7 pins; structurally
+      // compatible (one extra finish-reason value), so the cast is safe at runtime.
+      model: provider(AI_MODEL) as Parameters<typeof streamText>[0]["model"],
       system: SYSTEM_PROMPT,
       messages,
       output: Output.object({ schema: analysisSchema }),
-      providerOptions: RESPONSES_PROVIDER_OPTIONS,
     });
     const analysis = await result.output;
     if (!analysis) throw new Error("The AI could not analyze this image. Try a clearer X-ray.");
