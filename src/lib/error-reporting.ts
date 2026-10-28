@@ -1,49 +1,9 @@
-type ErrorOptions = {
-  mechanism?: "manual" | "onerror" | "unhandledrejection" | "react_error_boundary";
-  handled?: boolean;
-  severity?: "error" | "warning" | "info";
-};
-
-type HostEvents = {
-  track?: (event: string, properties?: Record<string, unknown>) => string | null;
-  captureException?: (
-    error: unknown,
-    context?: Record<string, unknown>,
-    options?: ErrorOptions,
-  ) => void;
-};
-
-declare global {
-  interface Window {
-    __lovableEvents?: HostEvents;
-    __lovableReportRuntimeError?: (payload: {
-      message: string;
-      stack?: string;
-      filename?: string;
-    }) => void;
-  }
-}
-
+/**
+ * Client-side error reporting hook.
+ * Called from the root error boundary; logs to the browser console.
+ */
 export function reportError(error: unknown, context: Record<string, unknown> = {}) {
   if (typeof window === "undefined") return;
-  window.__lovableEvents?.captureException?.(
-    error,
-    {
-      source: "react_error_boundary",
-      route: window.location.pathname,
-      ...context,
-    },
-    {
-      mechanism: "react_error_boundary",
-      handled: false,
-      severity: "error",
-    },
-  );
-  // Prod React does not rethrow boundary-caught errors to window.onerror, so the
-  // editor's telemetry never sees them. Forward to lovable.js's reporting hook,
-  // which is present only inside the editor preview.
-  // Loaders and server fns commonly throw a raw Response; String(it) is the
-  // opaque "[object Response]", so pull out the status and URL instead.
   const message =
     error instanceof Response
       ? `Response ${error.status}${error.url ? ` at ${error.url}` : ""}`
@@ -51,9 +11,5 @@ export function reportError(error: unknown, context: Record<string, unknown> = {
         ? error.message
         : String(error);
   const stack = error instanceof Error ? error.stack : undefined;
-  window.__lovableReportRuntimeError?.({
-    message,
-    ...(stack !== undefined && { stack }),
-    filename: window.location.pathname,
-  });
+  console.error("[FractureAI] Unhandled error:", message, { ...context, stack });
 }
