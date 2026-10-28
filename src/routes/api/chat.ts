@@ -28,16 +28,15 @@ export const Route = createFileRoute("/api/chat")({
         if (!Array.isArray(body.messages)) {
           return Response.json({ error: "messages are required" }, { status: 400 });
         }
-        const { provider } = createAiProvider(request);
+        const { provider } = createAiProvider();
         const modelMessages = await convertToModelMessages(body.messages);
         const system = body.analysisContext
           ? `${DOCTOR_PROMPT}\n\n--- X-RAY ANALYSIS CONTEXT ---\n${body.analysisContext}\n--- END CONTEXT ---`
           : DOCTOR_PROMPT;
         const result = streamText({
-          model: provider.responses(AI_MODEL),
+          model: provider(AI_MODEL),
           system,
           messages: modelMessages,
-          providerOptions: RESPONSES_PROVIDER_OPTIONS,
           abortSignal: request.signal,
         });
         return result.toUIMessageStreamResponse({ sendReasoning: false });
