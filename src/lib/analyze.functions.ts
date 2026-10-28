@@ -61,11 +61,10 @@ export const analyzeXray = createServerFn({ method: "POST" })
       },
     ];
     const result = streamText({
-      model: provider.responses(AI_MODEL),
+      model: provider(AI_MODEL),
       system: SYSTEM_PROMPT,
       messages,
       output: Output.object({ schema: analysisSchema }),
-      providerOptions: RESPONSES_PROVIDER_OPTIONS,
     });
     const analysis = await result.output;
     if (!analysis) throw new Error("The AI could not analyze this image. Try a clearer X-ray.");

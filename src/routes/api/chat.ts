@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
-import { AI_MODEL, createAiProvider, RESPONSES_PROVIDER_OPTIONS } from "@/lib/ai.server";
+import { AI_MODEL, createAiProvider } from "@/lib/ai.server";
 
 const DOCTOR_PROMPT = `You are "FractureAI Doctor", an AI orthopedic consultation assistant inside a bone-fracture X-ray analysis app.
 You are chatting with a patient (or caregiver) after their X-ray was analyzed.
