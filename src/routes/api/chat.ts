@@ -34,7 +34,8 @@ export const Route = createFileRoute("/api/chat")({
           ? `${DOCTOR_PROMPT}\n\n--- X-RAY ANALYSIS CONTEXT ---\n${body.analysisContext}\n--- END CONTEXT ---`
           : DOCTOR_PROMPT;
         const result = streamText({
-          model: provider(AI_MODEL),
+          // Gemini SDK bundles a newer provider version than ai@7 pins; cast is safe at runtime.
+          model: provider(AI_MODEL) as Parameters<typeof streamText>[0]["model"],
           system,
           messages: modelMessages,
           abortSignal: request.signal,

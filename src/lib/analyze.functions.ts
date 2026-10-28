@@ -61,7 +61,9 @@ export const analyzeXray = createServerFn({ method: "POST" })
       },
     ];
     const result = streamText({
-      model: provider(AI_MODEL),
+      // Gemini SDK bundles a newer provider version than ai@7 pins; structurally
+      // compatible (one extra finish-reason value), so the cast is safe at runtime.
+      model: provider(AI_MODEL) as Parameters<typeof streamText>[0]["model"],
       system: SYSTEM_PROMPT,
       messages,
       output: Output.object({ schema: analysisSchema }),
