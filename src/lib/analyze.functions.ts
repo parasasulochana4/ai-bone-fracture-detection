@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { streamText, Output, type ModelMessage } from "ai";
 import { z } from "zod";
-import { AI_MODEL, createAiProvider, RESPONSES_PROVIDER_OPTIONS } from "./ai.server";
+import { AI_MODEL, createAiProvider } from "./ai.server";
 
 const hotspotSchema = z.object({
   x: z.number().describe("horizontal center of the region, 0-1 relative to image width"),
