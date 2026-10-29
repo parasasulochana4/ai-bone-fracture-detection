@@ -106,7 +106,12 @@ function Index() {
       }
       setAnalysis(result);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Analysis failed — please try again.");
+      const raw = e instanceof Error ? e.message : "";
+      setError(
+        /high demand|overloaded|busy|rate.?limit|AI service/i.test(raw)
+          ? "The AI service is busy right now — please try again in a minute or two."
+          : raw || "Analysis failed — please try again.",
+      );
     } finally {
       setLoading(false);
     }
