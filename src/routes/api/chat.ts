@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/chat")({
         } catch {
           return Response.json({ error: "Invalid request body" }, { status: 400 });
         }
-        if (!Array.isArray(body.messages)) {
+        if (!Array.isArray(body.messages) || body.messages.length === 0) {
           return Response.json({ error: "messages are required" }, { status: 400 });
         }
         const { provider } = createAiProvider();
@@ -39,6 +39,7 @@ export const Route = createFileRoute("/api/chat")({
           system,
           messages: modelMessages,
           abortSignal: request.signal,
+          maxRetries: 4,
         });
         return result.toUIMessageStreamResponse({ sendReasoning: false });
       },
