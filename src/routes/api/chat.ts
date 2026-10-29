@@ -39,6 +39,7 @@ export const Route = createFileRoute("/api/chat")({
           system,
           messages: modelMessages,
           abortSignal: request.signal,
+          maxRetries: 4,
         });
         return result.toUIMessageStreamResponse({ sendReasoning: false });
       },
