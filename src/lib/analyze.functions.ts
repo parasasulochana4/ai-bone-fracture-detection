@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { streamText, Output, type ModelMessage } from "ai";
 import { z } from "zod";
-import { AI_MODEL, createAiProvider } from "./ai.server";
+import { AI_MODEL, createAiProvider, isTransientError } from "./ai.server";
+
+const ATTEMPT_TIMEOUT_MS = 75_000;
 
 const hotspotSchema = z.object({
   x: z.number().describe("horizontal center of the region, 0-1 relative to image width"),
@@ -49,7 +51,7 @@ export const analyzeXray = createServerFn({ method: "POST" })
     return { image: data.image };
   })
   .handler(async ({ data }): Promise<FractureAnalysis> => {
-    const { provider } = createAiProvider();
+    const { provider, modelChain } = createAiProvider();
     const mediaType = data.image.slice(5, data.image.indexOf(";")) || "image/jpeg";
     const messages: ModelMessage[] = [
       {
@@ -60,15 +62,35 @@ export const analyzeXray = createServerFn({ method: "POST" })
         ],
       },
     ];
-    const result = streamText({
-      // Gemini SDK bundles a newer provider version than ai@7 pins; structurally
-      // compatible (one extra finish-reason value), so the cast is safe at runtime.
-      model: provider(AI_MODEL) as Parameters<typeof streamText>[0]["model"],
-      system: SYSTEM_PROMPT,
-      messages,
-      output: Output.object({ schema: analysisSchema }),
-    });
-    const analysis = await result.output;
-    if (!analysis) throw new Error("The AI could not analyze this image. Try a clearer X-ray.");
-    return analysis;
+
+    let lastError: unknown;
+    // Gemini SDK bundles a newer provider version than ai@7 pins; structurally
+    // compatible (one extra finish-reason value), so the cast is safe at runtime.
+    for (const modelId of modelChain) {
+      try {
+        const result = streamText({
+          model: provider(modelId) as Parameters<typeof streamText>[0]["model"],
+          system: SYSTEM_PROMPT,
+          messages,
+          output: Output.object({ schema: analysisSchema }),
+          maxRetries: 1,
+          abortSignal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
+        });
+        const analysis = await result.output;
+        if (!analysis) throw new Error("The AI could not analyze this image. Try a clearer X-ray.");
+        return analysis;
+      } catch (error) {
+        lastError = error;
+        if (isTransientError(error)) continue;
+        throw error;
+      }
+    }
+    if (isTransientError(lastError)) {
+      throw new Error(
+        "The AI service is busy right now — please try again in a minute or two.",
+      );
+    }
+    throw lastError instanceof Error
+      ? lastError
+      : new Error("The AI could not analyze this image. Try a clearer X-ray.");
   });
